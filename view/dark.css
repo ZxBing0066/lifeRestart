@@ -570,8 +570,3 @@ i {
 ::-webkit-scrollbar {
     width: 0 !important
 }
-
-#autoLife {
-  bottom: 1em;
-  top: auto;
-}

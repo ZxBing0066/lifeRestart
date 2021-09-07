@@ -2,16 +2,18 @@ import Property from './property.js';
 import Event from './event.js';
 import Talent from './talent.js';
 
+const goldFingerConfig = {
+    talent: true,
+    pointLimit: true,
+    talentLimit: true
+}
+
 class Life {
     constructor() {
         this.#property = new Property();
         this.#event = new Event();
         this.#talent = new Talent();
-        this.goldFinger = {
-            talent: true,
-            pointLimit: true,
-            talentLimit: true
-        }
+        this.goldFinger = goldFingerConfig
         this.#cache = {}
     }
 
@@ -21,6 +23,14 @@ class Life {
     #triggerTalents;
     goldFinger;
     #cache;
+
+    toggleGoldFinger = () => {
+        this.goldFinger = this.getGoldFingerStatus() ? {} : goldFingerConfig;
+        return this.getGoldFingerStatus();
+    }
+    getGoldFingerStatus = () => {
+        return Object.keys(this.goldFinger).length > 0;
+    }
 
     async initial() {
         const [age, talents, events] = await Promise.all([

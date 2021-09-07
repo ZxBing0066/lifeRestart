@@ -36,12 +36,12 @@ class App{
             </div>
         </div>
         `);
-
         // Index
         const indexPage = $(`
         <div id="main">
             <div id="cnt" class="head">已重开1次</div>
             <button id="rank">排行榜</button>
+            <button id="goldFinger" class="${this.#life.getGoldFingerStatus() ? "valid" : ""}"></button>
             <button id="themeToggleBtn">黑</button>
             <div id="title">
                 人生重开模拟器<br>
@@ -54,6 +54,12 @@ class App{
         // Init theme
         this.setTheme(localStorage.getItem('theme'))
 
+        indexPage
+            .find('#goldFinger')
+            .click(()=> {
+                const goldFingerStatus = this.#life.toggleGoldFinger();
+                $('#goldFinger').toggleClass('valid', goldFingerStatus);
+            });
         indexPage
             .find('#restart')
             .click(()=>this.switch('talent'));
