@@ -296,7 +296,7 @@ body {
 
 .propinitial > li > input {
     height: 2.2rem;
-    width: 2.2rem;
+    width: 3.2rem;
     margin: 0 0.5rem;
     padding: 0;
     text-align: center;
@@ -569,4 +569,9 @@ i {
 
 ::-webkit-scrollbar {
     width: 0 !important
+}
+
+#autoLife {
+  bottom: 1em;
+  top: auto;
 }

@@ -7,12 +7,20 @@ class Life {
         this.#property = new Property();
         this.#event = new Event();
         this.#talent = new Talent();
+        this.goldFinger = {
+            talent: true,
+            pointLimit: true,
+            talentLimit: true
+        }
+        this.#cache = {}
     }
 
     #property;
     #event;
     #talent;
     #triggerTalents;
+    goldFinger;
+    #cache;
 
     async initial() {
         const [age, talents, events] = await Promise.all([
@@ -23,6 +31,7 @@ class Life {
         this.#property.initial({age});
         this.#talent.initial({talents});
         this.#event.initial({events});
+        this.#cache.talents = talents;
     }
 
     restart(allocation) {
@@ -100,7 +109,16 @@ class Life {
     }
 
     talentRandom() {
-        return this.#talent.talentRandom(JSON.parse(localStorage.extendTalent||'null'));
+        return this.goldFinger.talent
+            ? this.getCacheTalentsArray()
+            : this.#talent.talentRandom(JSON.parse(localStorage.extendTalent || 'null'));
+    }
+    getCacheTalentsArray() {
+        const list = [];
+        for(const talentId in this.#cache.talents) {
+            list.push(this.#cache.talents[talentId]);
+        }
+        return list.sort((a, b) => b.grade - a.grade);
     }
 
     talentExtend(talentId) {

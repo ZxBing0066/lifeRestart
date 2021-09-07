@@ -78,7 +78,7 @@ class App{
         const talentPage = $(`
         <div id="main">
             <div class="head" style="font-size: 1.6rem">天赋抽卡</div>
-            <button id="random" class="mainbtn" style="top: 50%;">10连抽！</button>
+            <button id="random" class="mainbtn" style="top: 50%;">${this.#life.goldFinger.talent ? '神之抽卡' : '10连抽！'}</button>
             <ul id="talents" class="selectlist"></ul>
             <button id="next" class="mainbtn" style="top:auto; bottom:0.1em">请选择3个</button>
         </div>
@@ -88,11 +88,13 @@ class App{
             return $(`<li class="grade${grade}b">${name}（${description}）</li>`)
         };
 
+        let maxTalent = 3;
         talentPage
             .find('#random')
             .click(()=>{
                 talentPage.find('#random').hide();
                 const ul = talentPage.find('#talents');
+                if(this.#life.goldFinger.talentLimit) maxTalent = 10;
                 this.#life.talentRandom()
                     .forEach(talent=>{
                         const li = createTalent(talent);
@@ -101,12 +103,12 @@ class App{
                             if(li.hasClass('selected')) {
                                 li.removeClass('selected')
                                 this.#talentSelected.delete(talent);
-                                if(this.#talentSelected.size<3) {
-                                    talentPage.find('#next').text('请选择3个')
+                                if(this.#talentSelected.size<maxTalent) {
+                                    talentPage.find('#next').text(`请选择${maxTalent}个`)
                                 }
                             } else {
-                                if(this.#talentSelected.size==3) {
-                                    this.hint('只能选3个天赋');
+                                if(this.#talentSelected.size==maxTalent) {
+                                    this.hint(`只能选${maxTalent}个天赋`);
                                     return;
                                 }
 
@@ -125,7 +127,7 @@ class App{
                                 }
                                 li.addClass('selected');
                                 this.#talentSelected.add(talent);
-                                if(this.#talentSelected.size==3) {
+                                if(this.#talentSelected.size==maxTalent) {
                                     talentPage.find('#next').text('开始新人生')
                                 }
                             }
@@ -136,11 +138,12 @@ class App{
         talentPage
             .find('#next')
             .click(()=>{
-                if(this.#talentSelected.size!=3) {
-                    this.hint('请选择3个天赋');
+                if(this.#talentSelected.size!=maxTalent) {
+                    this.hint(`请选择个${maxTalent}天赋`);
                     return;
                 }
                 this.#totalMax = 20 + this.#life.getTalentAllocationAddition(Array.from(this.#talentSelected).map(({id})=>id));
+                if(this.#life.goldFinger.pointLimit) this.#totalMax = 400;
                 this.switch('property');
             })
 
@@ -221,10 +224,12 @@ class App{
             return {group, get, set};
         }
 
-        groups.CHR = getBtnGroups("颜值", 0, 10); // 颜值 charm CHR
-        groups.INT = getBtnGroups("智力", 0, 10); // 智力 intelligence INT
-        groups.STR = getBtnGroups("体质", 0, 10); // 体质 strength STR
-        groups.MNY = getBtnGroups("家境", 0, 10); // 家境 money MNY
+        const pointLimit = this.#life.goldFinger.pointLimit ? 100 : 10
+
+        groups.CHR = getBtnGroups("颜值", 0, pointLimit); // 颜值 charm CHR
+        groups.INT = getBtnGroups("智力", 0, pointLimit); // 智力 intelligence INT
+        groups.STR = getBtnGroups("体质", 0, pointLimit); // 体质 strength STR
+        groups.MNY = getBtnGroups("家境", 0, pointLimit); // 家境 money MNY
 
         const ul = propertyPage.find('#propertyAllocation');
 
@@ -235,6 +240,14 @@ class App{
         propertyPage
             .find('#random')
             .click(()=>{
+                if (this.#life.goldFinger.pointLimit) {
+                    groups.CHR.set(100);
+                    groups.INT.set(100);
+                    groups.STR.set(100);
+                    groups.MNY.set(100);
+                    return;
+                }
+
                 let t = this.#totalMax;
                 const arr = [10, 10, 10, 10];
                 while(t>0) {
@@ -285,46 +298,76 @@ class App{
         <div id="main">
             <ul id="lifeProperty" class="lifeProperty"></ul>
             <ul id="lifeTrajectory" class="lifeTrajectory"></ul>
+            <button id="autoLife" class="mainbtn" style="top:auto; bottom:0.1rem">自动人生</button>
             <button id="summary" class="mainbtn" style="top:auto; bottom:0.1rem">人生总结</button>
         </div>
         `);
 
+        let timer;
+        let auto = false;
+        trajectoryPage
+            .find('#autoLife')
+            .click(()=>{
+                if(auto) {
+                    clearTimeout(timer);
+                    auto = false;
+                    return;
+                }
+                const tick = () => {
+                    auto = true;
+                    clearTimeout(timer);
+                    timer = setTimeout(() => {
+                        if(this.#isEnd) return;
+                        runLife();
+                        tick();
+                    }, 100);
+                }
+                tick();
+            })
+
+        const runLife = ()=>{
+            if(this.#isEnd) return;
+            const trajectory = this.#life.next();
+            const { age, content, isEnd } = trajectory;
+
+            const li = $(`<li><span>${age}岁：</span>${
+                content.map(
+                    ({type, description, grade, name, postEvent}) => {
+                        switch(type) {
+                            case 'TLT':
+                                return `天赋【${name}】发动：${description}`;
+                            case 'EVT':
+                                return description + (postEvent?`<br>${postEvent}`:'');
+                        }
+                    }
+                ).join('<br>')
+            }</li>`);
+            li.appendTo('#lifeTrajectory');
+            $("#lifeTrajectory").scrollTop($("#lifeTrajectory")[0].scrollHeight);
+            if(isEnd) {
+                $(document).unbind("keydown");
+                this.#isEnd = true;
+                trajectoryPage.find('#summary').show();
+                trajectoryPage.find('#autoLife').show();
+            } else {
+                // 如未死亡，更新数值
+                // Update properties if not die yet
+                const property = this.#life.getLastRecord();
+                $("#lifeProperty").html(`
+                <li>颜值：${property.CHR} </li>
+                <li>智力：${property.INT} </li>
+                <li>体质：${property.STR} </li>
+                <li>家境：${property.MNY} </li>
+                <li>快乐：${property.SPR} </li>`);
+            }
+        }
+
         trajectoryPage
             .find('#lifeTrajectory')
-            .click(()=>{
-                if(this.#isEnd) return;
-                const trajectory = this.#life.next();
-                const { age, content, isEnd } = trajectory;
-
-                const li = $(`<li><span>${age}岁：</span>${
-                    content.map(
-                        ({type, description, grade, name, postEvent}) => {
-                            switch(type) {
-                                case 'TLT':
-                                    return `天赋【${name}】发动：${description}`;
-                                case 'EVT':
-                                    return description + (postEvent?`<br>${postEvent}`:'');
-                            }
-                        }
-                    ).join('<br>')
-                }</li>`);
-                li.appendTo('#lifeTrajectory');
-                $("#lifeTrajectory").scrollTop($("#lifeTrajectory")[0].scrollHeight);
-                if(isEnd) {
-                    $(document).unbind("keydown");
-                    this.#isEnd = true;
-                    trajectoryPage.find('#summary').show();
-                } else {
-                    // 如未死亡，更新数值
-                    // Update properties if not die yet
-                    const property = this.#life.getLastRecord();
-                    $("#lifeProperty").html(`
-                    <li>颜值：${property.CHR} </li>
-                    <li>智力：${property.INT} </li>
-                    <li>体质：${property.STR} </li>
-                    <li>家境：${property.MNY} </li>
-                    <li>快乐：${property.SPR} </li>`);
-                }
+            .click(() => {
+                clearTimeout(timer);
+                auto = false;
+                runLife();
             });
 
         trajectoryPage
