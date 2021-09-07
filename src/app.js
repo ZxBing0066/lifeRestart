@@ -80,7 +80,7 @@ class App{
             <div class="head" style="font-size: 1.6rem">天赋抽卡</div>
             <button id="random" class="mainbtn" style="top: 50%;">${this.#life.goldFinger.talent ? '神之抽卡' : '10连抽！'}</button>
             <ul id="talents" class="selectlist"></ul>
-            <button id="next" class="mainbtn" style="top:auto; bottom:0.1em">请选择3个</button>
+            <button id="next" class="mainbtn" style="top:auto; bottom:0.1em">请选择天赋</button>
         </div>
         `);
 
@@ -95,6 +95,7 @@ class App{
                 talentPage.find('#random').hide();
                 const ul = talentPage.find('#talents');
                 if(this.#life.goldFinger.talentLimit) maxTalent = 10;
+                talentPage.find('#next').text(`请选择${maxTalent}个`)
                 this.#life.talentRandom()
                     .forEach(talent=>{
                         const li = createTalent(talent);
