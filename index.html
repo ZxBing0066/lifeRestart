@@ -1,0 +1,44 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Restart</title>
+</head>
+
+<body>
+    <style>
+        html {
+            background-color: #222831;
+        }
+
+        #restart {
+            position: relative;
+            top: 20vh;
+            margin: 0 auto;
+            padding: 0.5rem 1.5rem;
+            border: 1px #EEEEEE solid;
+            border-radius: 0.2rem;
+            background-color: #393E46;
+            font-size: 1.6rem;
+            color: #EEEEEE;
+            display: block;
+            font-family: monospace;
+        }
+
+        #restart:hover {
+            background: #ff7878;
+            color: #fff;
+            transition: all .4s ease 0s;
+        }
+    </style>
+    <script>
+        var go = () => location.replace('/view/');
+    </script>
+    <div>
+        <button onclick="go()" id="restart">Restart</button>
+    </div>
+</body>
+
+</html>
